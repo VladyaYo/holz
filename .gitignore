@@ -1,2 +1,4 @@
-received_data
+/received_data
 .env
+/.idea
+/.venv
