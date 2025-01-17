@@ -1,4 +1,9 @@
-/received_data
+received_data/*
+!received_data/.gitkeep
 .env
-/.idea
-/.venv
+.idea
+.venv
+processed_data/*
+!processed_data/.gitkeep
+__pycache__
+*.csv

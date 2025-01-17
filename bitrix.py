@@ -62,21 +62,26 @@ while True:
 processed_leads = []
 for lead in all_leads:
     # Извлекаем телефоны и формируем отдельные колонки
-    phones = [phone['VALUE'] for phone in lead.get('PHONE', [])]
+    phones = lead.get('PHONE', [])
 
     # Добавляем данные о лидах и их телефонах в новую структуру
     lead_data = {
         'ID': lead['ID'],
         'TITLE': lead['TITLE'],
         'DATE_CREATE': lead['DATE_CREATE'],
-        'STATUS_ID': lead['STATUS_ID']
+        'STATUS_ID': lead['STATUS_ID'],
     }
 
-    # Добавляем телефоны в отдельные колонки
-    for i, phone in enumerate(phones):
-        lead_data[f'PHONE_{i + 1}'] = phone
+    if phones and isinstance(phones, list):
+        for i, phone in enumerate(phones):
+            if phone.get('isMultiple', False):
+                lead_data[f'PHONE_{i + 1}'] = phone['VALUE']
+            else:
+                lead_data['PHONE'] = phone['VALUE']
+                break
 
     processed_leads.append(lead_data)
+    print(processed_leads[:5])
 
 # Преобразуем обработанные данные в DataFrame
 df = pd.DataFrame(processed_leads)
