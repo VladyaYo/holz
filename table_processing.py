@@ -80,19 +80,28 @@ import phonenumbers
 def format_phone(phone, default_region="UA"):
     """
     Преобразует телефонный номер в стандартный формат E.164.
-    Учитывает номера, начинающиеся с кода оператора, 380 или '+'.
+    Учитывает только последние 9 цифр номера (без кода страны).
     """
     try:
-        # Удаляем все символы, кроме цифр и '+'
-        clean_phone = ''.join(filter(lambda x: x.isdigit() or x == '+', str(phone)))
+        # Преобразуем номер в строку, если он не строка
+        phone = str(phone).strip()
 
-        # Если номер начинается с кода оператора (например, 66XXXXXXX)
-        if len(clean_phone) == 9 and clean_phone[:2] in ['39', '50', '66', '67', '68', '73', '91', '92', '93', '94']:
-            clean_phone = '+380' + clean_phone
+        # Удаляем .0, если номер в формате float
+        if phone.endswith('.0'):
+            phone = phone[:-2]
 
-        # Если номер начинается с 380, но без '+', добавляем '+'
-        elif clean_phone.startswith('380') and not clean_phone.startswith('+'):
-            clean_phone = '+' + clean_phone
+        # Удаляем все символы, кроме цифр
+        clean_phone = ''.join(filter(str.isdigit, phone))
+
+        # Если номер содержит менее 9 цифр, возвращаем None
+        if len(clean_phone) < 9:
+            return None
+
+        # Оставляем последние 9 цифр номера
+        clean_phone = clean_phone[-9:]
+
+        # Добавляем код страны Украины для стандартного формата
+        # clean_phone = '+380' + clean_phone
 
         # Парсим номер
         parsed_phone = phonenumbers.parse(clean_phone, default_region)
@@ -106,46 +115,77 @@ def format_phone(phone, default_region="UA"):
     return None
 
 
+# def combine_tables_with_phone_formatting(incoming_calls_df, getcalls_df, bitrix_df):
+#     """
+#     Объединяет три таблицы в одну, приводит номера телефонов к единому формату,
+#     сохраняет оригинальные названия колонок и указывает источник данных.
+#
+#     Args:
+#         incoming_calls_df (pd.DataFrame): Таблица входящих звонков.
+#         getcalls_df (pd.DataFrame): Таблица звонков.
+#         bitrix_df (pd.DataFrame): Основная таблица.
+#
+#     Returns:
+#         pd.DataFrame: Объединенная таблица с форматированными номерами телефонов.
+#     """
+#     # Список колонок с номерами телефонов и их источников
+#     phone_columns = {
+#         'IncomingCalls_ExternalNumber': incoming_calls_df,
+#         'IncomingCalls_PBXNumberNumber': incoming_calls_df,
+#         'GetCalls_ExternalNumber': getcalls_df,
+#         'Bitrix_PHONE': bitrix_df
+#     }
+#
+#     # Приводим номера к единому формату
+#     for col, df in phone_columns.items():
+#         if col in df.columns:
+#             df[col] = df[col].apply(format_phone).astype(str)  # Приводим к строковому типу
+#
+#     # Добавляем префиксы к колонкам для указания источника
+#     incoming_calls_df = incoming_calls_df.add_prefix('IncomingCalls_')
+#     getcalls_df = getcalls_df.add_prefix('GetCalls_')
+#     bitrix_df = bitrix_df.add_prefix('Bitrix_')
+#
+#     # Добавляем источник данных для идентификации
+#     incoming_calls_df['Source'] = 'IncomingCalls'
+#     getcalls_df['Source'] = 'GetCalls'
+#     bitrix_df['Source'] = 'Bitrix'
+#
+#     # Объединяем таблицы
+#     combined_df = pd.concat([incoming_calls_df, getcalls_df, bitrix_df], ignore_index=True, sort=False)
+#
+#     return combined_df
+
 def combine_tables_with_phone_formatting(incoming_calls_df, getcalls_df, bitrix_df):
     """
-    Объединяет три таблицы в одну, приводит номера телефонов к единому формату,
-    сохраняет оригинальные названия колонок и указывает источник данных.
-
-    Args:
-        incoming_calls_df (pd.DataFrame): Таблица входящих звонков.
-        getcalls_df (pd.DataFrame): Таблица звонков.
-        bitrix_df (pd.DataFrame): Основная таблица.
-
-    Returns:
-        pd.DataFrame: Объединенная таблица с форматированными номерами телефонов.
+    Объединяет три таблицы, предварительно форматируя номера телефонов в указанных колонках.
     """
-    # Список колонок с номерами телефонов и их источников
-    phone_columns = {
-        'IncomingCalls_ExternalNumber': incoming_calls_df,
-        'IncomingCalls_PBXNumberNumber': incoming_calls_df,
-        'GetCalls_ExternalNumber': getcalls_df,
-        'Bitrix_PHONE': bitrix_df
-    }
+    def format_phone_numbers(df, columns):
+        """
+        Применяет преобразование номера телефона ко всем указанным колонкам DataFrame.
+        """
+        for col in columns:
+            if col in df.columns:
+                df[col] = df[col].apply(format_phone)
+        return df
 
-    # Приводим номера к единому формату
-    for col, df in phone_columns.items():
-        if col in df.columns:
-            df[col] = df[col].apply(format_phone).astype(str)  # Приводим к строковому типу
+    # Преобразование номеров в каждой таблице
+    incoming_calls_df = format_phone_numbers(
+        incoming_calls_df, ['ExternalNumber', 'PBXNumberNumber']
+    )
+    getcalls_df = format_phone_numbers(getcalls_df, ['ExternalNumber'])
+    bitrix_df = format_phone_numbers(bitrix_df, ['PHONE'])
 
-    # Добавляем префиксы к колонкам для указания источника
-    incoming_calls_df = incoming_calls_df.add_prefix('IncomingCalls_')
-    getcalls_df = getcalls_df.add_prefix('GetCalls_')
-    bitrix_df = bitrix_df.add_prefix('Bitrix_')
+    # Добавляем источник данных в название колонок
+    incoming_calls_df = incoming_calls_df.add_prefix("IncomingCalls_")
+    getcalls_df = getcalls_df.add_prefix("GetCalls_")
+    bitrix_df = bitrix_df.add_prefix("Bitrix_")
 
-    # Добавляем источник данных для идентификации
-    incoming_calls_df['Source'] = 'IncomingCalls'
-    getcalls_df['Source'] = 'GetCalls'
-    bitrix_df['Source'] = 'Bitrix'
+    # Объединяем все три таблицы
+    merged_df = pd.concat([incoming_calls_df, getcalls_df, bitrix_df], ignore_index=True)
 
-    # Объединяем таблицы
-    combined_df = pd.concat([incoming_calls_df, getcalls_df, bitrix_df], ignore_index=True, sort=False)
+    return merged_df
 
-    return combined_df
 
 
 def save_to_csv(df, start_time, stop_time, file_prefix):
@@ -214,6 +254,42 @@ def save_to_csv(df, start_time, stop_time, file_prefix):
 #     print(f"Размер merged_df после второго мержa: {merged_df.shape}")
 #
 #     return merged_df
+
+def merge_and_filter_columns(merged_df):
+    """
+    Объединяет строки внутри `merged_df` по совпадению `Bitrix_PHONE` и `IncomingCalls_ExternalNumber`.
+    - Создаёт колонку 'Phone' для объединения.
+    - Объединяет строки, заменяя пропущенные значения.
+    - Оставляет только нужные колонки.
+    """
+
+    # Создаём новую колонку 'Phone' для объединения
+    merged_df['Phone'] = merged_df['Bitrix_PHONE'].fillna(merged_df['IncomingCalls_ExternalNumber'])
+
+    # Удаляем дубликаты по 'Phone' (оставляем первую встреченную строку)
+    merged_df = merged_df.drop_duplicates(subset=['Phone'])
+
+    # Объединяем таблицу саму с собой по 'Phone'
+    combined_df = merged_df.merge(merged_df, on='Phone', how='outer')
+
+    # Заполняем пропущенные значения (NaN) из другой строки
+    combined_df = combined_df.combine_first(merged_df)
+
+    # Выбираем только нужные колонки
+    required_columns = [
+        'IncomingCalls_GeneralCallID',
+        'IncomingCalls_StartTime',
+        'IncomingCalls_InternalNumber',
+        'IncomingCalls_PBXNumberNumber',
+        'IncomingCalls_PBXNumberName',
+        'IncomingCalls_LinkToCrmUrl',
+        'IncomingCalls_ExternalNumber'
+    ] + [col for col in combined_df.columns if col.startswith('Bitrix_')]
+
+    # Оставляем только нужные колонки
+    filtered_df = combined_df[required_columns]
+
+    return filtered_df
 
 
 def process_pbx_column_data(processed_merged_data):

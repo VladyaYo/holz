@@ -5,7 +5,7 @@ import os
 
 from api_requests import fetch_incoming_calls, fetch_getcalls_for_period, fetch_bitrix_leads
 from process import process_call_data, process_getcalls_data, process_bitrix_data
-from table_processing import combine_tables_with_phone_formatting, save_to_csv, process_pbx_column_data
+from table_processing import combine_tables_with_phone_formatting, save_to_csv, merge_and_filter_columns
 
 
 async def fetch_data(start_time, stop_time, start_date_str, end_date_str):
@@ -66,6 +66,11 @@ async def main():
 
     # Сохраняем итоговую таблицу
     save_to_csv(merged_df, start_time, stop_time, "merged_data")
+
+    merge_on_numbers = merge_and_filter_columns(merged_df)
+
+    save_to_csv(merge_on_numbers, start_time, stop_time, "merged_on_numbers")
+
 
     print("Обработка завершена.")
 
