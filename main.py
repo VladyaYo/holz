@@ -5,7 +5,7 @@ import os
 
 from api_requests import fetch_incoming_calls, fetch_getcalls_for_period, fetch_bitrix_leads
 from process import process_call_data, process_getcalls_data, process_bitrix_data
-from table_processing import combine_tables_with_phone_formatting, save_to_csv, merge_and_filter_columns
+from table_processing import  save_to_csv, format_all_phone_numbers, merge_tables, process_and_count_rows
 
 
 async def fetch_data(start_time, stop_time, start_date_str, end_date_str):
@@ -20,8 +20,8 @@ async def fetch_data(start_time, stop_time, start_date_str, end_date_str):
 
 
 async def main():
-    start_date_str = "2024-12-01"
-    end_date_str = "2024-12-31"
+    start_date_str = "2024-11-01"
+    end_date_str = "2024-11-30"
 
     start_time = datetime.strptime(start_date_str, "%Y-%m-%d")
     stop_time = datetime.strptime(end_date_str, "%Y-%m-%d")
@@ -61,15 +61,32 @@ async def main():
     getcalls_df = pd.read_csv(getcalls_file)
     bitrix_df = pd.read_csv(bitrix_file)
 
-    # Объединяем данные по номеру телефона
-    merged_df = combine_tables_with_phone_formatting(incoming_calls_df, getcalls_df, bitrix_df)
+    incoming_calls_df, getcalls_df, bitrix_df = format_all_phone_numbers(incoming_calls_df, getcalls_df, bitrix_df)
+
+    save_to_csv(incoming_calls_df, start_time, stop_time, "incoming_calls_ph_formatting")
+    save_to_csv(getcalls_df, start_time, stop_time, "getcalls_ph_formatting")
+    save_to_csv(bitrix_df, start_time, stop_time, "bitrix_ph_formatting")
+
+    # Объединяем таблицы
+    merged_df = merge_tables(bitrix_df, incoming_calls_df, getcalls_df)
+
+    # Сохраняем финальный результат
+    save_to_csv(merged_df, start_time, stop_time, "final_merged")
+
+    pbx_summary_df = process_and_count_rows(merged_df)
 
     # Сохраняем итоговую таблицу
-    save_to_csv(merged_df, start_time, stop_time, "merged_data")
+    save_to_csv(pbx_summary_df, start_time, stop_time, "pbx_summary")
 
-    merge_on_numbers = merge_and_filter_columns(merged_df)
-
-    save_to_csv(merge_on_numbers, start_time, stop_time, "merged_on_numbers")
+    # # Объединяем данные по номеру телефона
+    # merged_df = combine_tables_with_phone_formatting(incoming_calls_df, getcalls_df, bitrix_df)
+    #
+    # # Сохраняем итоговую таблицу
+    # save_to_csv(merged_df, start_time, stop_time, "merged_data")
+    #
+    # merge_on_numbers = merge_and_filter_columns(merged_df)
+    #
+    # save_to_csv(merge_on_numbers, start_time, stop_time, "merged_on_numbers")
 
 
     print("Обработка завершена.")
