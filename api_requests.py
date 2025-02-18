@@ -37,6 +37,9 @@ def fetch_incoming_calls(start_time: datetime, stop_time: datetime):
 
 def fetch_getcalls_for_period(start_time: datetime, stop_time: datetime):
     """Запрос списка звонков за указанный период."""
+    start_time = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
+    stop_time = stop_time.replace(hour=23, minute=59, second=59, microsecond=0)
+
     start_timestamp = int(start_time.timestamp())
     stop_timestamp = int(stop_time.timestamp())
 
@@ -62,7 +65,7 @@ def fetch_bitrix_leads(start_date_str, end_date_str):
             ">=DATE_CREATE": start_date,
             "<=DATE_CREATE": end_date,
         },
-        "select": ["ID", "TITLE", "DATE_CREATE", "STATUS_ID", "SOURCE_DESCRIPTION", "PHONE"],
+        "select": ["ID", "TITLE", "DATE_CREATE", "STATUS_ID", "SOURCE_ID", "SOURCE_DESCRIPTION", "PHONE"],
     }
 
     all_leads = []

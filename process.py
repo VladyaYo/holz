@@ -126,6 +126,7 @@ def process_bitrix_data(bitrix_leads, start_time, stop_time):
         row = {
             "ID": lead.get("ID"),
             "TITLE": lead.get("TITLE"),
+            "SOURCE_ID":lead.get("SOURCE_ID"),
             "DATE_CREATE": lead.get("DATE_CREATE")
             if lead.get("DATE_CREATE") else None,
             "STATUS_ID": lead.get("STATUS_ID"),

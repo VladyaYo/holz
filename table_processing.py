@@ -1,12 +1,41 @@
 import pandas as pd
 import os
 
-def save_to_csv(df, start_time, stop_time, file_prefix):
-    """Сохраняем итоговую таблицу в файл CSV"""
-    os.makedirs("processed_data", exist_ok=True)
-    file_name = f"processed_{file_prefix}_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv"
-    df.to_csv(f"processed_data/{file_name}", index=False, encoding="utf-8-sig")
-    print(f"Данные успешно сохранены в файл {file_name}")
+
+def save_to_csv(df: pd.DataFrame, start_time, stop_time, file_prefix: str) -> str | None:
+    """
+    Сохраняет итоговую таблицу в файл CSV и возвращает путь к файлу.
+
+    :param df: DataFrame для сохранения.
+    :param start_time: Начальное время (объект datetime или строка).
+    :param stop_time: Конечное время (объект datetime или строка).
+    :param file_prefix: Префикс для имени файла.
+    :return: Путь к сохраненному файлу.
+    """
+    try:
+        # Создаем папку, если она не существует
+        os.makedirs("processed_data", exist_ok=True)
+
+        # Формируем имя файла
+        if hasattr(start_time, 'strftime') and hasattr(stop_time, 'strftime'):
+            # Если start_time и stop_time — объекты datetime
+            file_name = f"processed_{file_prefix}_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv"
+        else:
+            # Если start_time и stop_time — строки
+            file_name = f"processed_{file_prefix}_{start_time}-{stop_time}.csv"
+
+        # Полный путь к файлу
+        file_path = os.path.join("processed_data", file_name)
+
+        # Сохраняем DataFrame в CSV
+        df.to_csv(file_path, index=False, encoding="utf-8-sig")
+
+        print(f"Данные успешно сохранены в файл {file_path}")
+        return file_path
+
+    except Exception as e:
+        print(f"Ошибка при сохранении CSV-файла: {e}")
+        return None
 
 def format_phone(phone):
     """Форматирует номер телефона (оставляет последние 9 цифр, удаляет '.0')."""
@@ -102,3 +131,102 @@ def process_and_count_rows(merged_df):
     # Добавляем дополнительные строки в итоговую таблицу
     pbx_name_counts = pd.concat([pd.DataFrame(summary_rows), pbx_name_counts], ignore_index=True)
     return pbx_name_counts
+
+import pandas as pd
+
+def calculate_incoming_calls_stats(incoming_calls_df, pbx_summary_df):
+    """
+    Удаляет строки с 'SMS-SUCCESS' в колонке Disposition и считает:
+    - Общее количество оставшихся строк
+    - Количество уникальных значений в колонке ExternalNumber
+    - Количество строк, где PBXNumberNumber = 985405115
+    - Количество уникальных ExternalNumber, где PBXNumberNumber = 985405115
+    - Количество строк, где PBXNumberName = 'CallTracking holz.ua'
+    - Количество уникальных ExternalNumber, где PBXNumberName = 'CallTracking holz.ua'
+    - Добавляет данные в итоговую таблицу pbx_summary_df
+    """
+    # Фильтруем данные (исключаем SMS-SUCCESS)
+    filtered_df = incoming_calls_df[incoming_calls_df["Disposition"] != "SMS-SUCCESS"]
+
+    # Основные расчёты
+    total_rows = len(filtered_df)
+    unique_numbers = filtered_df["ExternalNumber"].nunique()
+
+    # Расчёты для PBXNumberNumber = 985405115
+    pbx_filtered = filtered_df[filtered_df["PBXNumberNumber"] == "985405115"]
+    pbx_total = len(pbx_filtered)
+    pbx_unique = pbx_filtered["ExternalNumber"].nunique()
+
+    # Расчёты для PBXNumberName = 'CallTracking holz.ua'
+    calltracking_filtered = filtered_df[filtered_df["PBXNumberName"] == "CallTracking holz.ua"]
+    calltracking_total = len(calltracking_filtered)
+    calltracking_unique = calltracking_filtered["ExternalNumber"].nunique()
+
+    # Создаем DataFrame с результатами
+    stats_df = pd.DataFrame({
+        "Метрика": [
+            "Бінотел (вхідні дзвінки): Всього дзвінків",
+            "Бінотел (вхідні дзвінки): Всього дзвінків унікальних",
+            "Бінотел (вхідні дзвінки): PBXNumberNumber = 985405115",
+            "Бінотел (вхідні дзвінки): PBXNumberNumber = 985405115 (унікальні ExternalNumber)",
+            "Бінотел (вхідні дзвінки): PBXNumberName = CallTracking holz.ua",
+            "Бінотел (вхідні дзвінки): PBXNumberName = CallTracking holz.ua (унікальні ExternalNumber)"
+        ],
+        "Значение": [
+            total_rows, unique_numbers,
+            pbx_total, pbx_unique,
+            calltracking_total, calltracking_unique
+        ]
+    })
+
+    # Добавляем результаты в итоговую таблицу
+    pbx_summary_df = pd.concat([pbx_summary_df, stats_df], ignore_index=True)
+
+    return pbx_summary_df
+
+
+def calculate_getcalls_stats(getcalls_df, pbx_summary_df):
+    """
+    Считает:
+    - Общее количество строк в getcalls_df
+    - Количество уникальных значений в колонке ExternalNumber
+    - Добавляет данные в итоговую таблицу pbx_summary_df
+    """
+    # Подсчитываем значения
+    total_rows = len(getcalls_df)
+    unique_numbers = getcalls_df["ExternalNumber"].nunique()
+
+    # Создаем DataFrame с результатами
+    stats_df = pd.DataFrame({
+        "Метрика": ["Всього разів залишили номер (GetCalls)", "Всього унікальних номерів (GetCalls)"],
+        "Значение": [total_rows, unique_numbers]
+    })
+
+    # Добавляем результаты в итоговую таблицу
+    pbx_summary_df = pd.concat([pbx_summary_df, stats_df], ignore_index=True)
+
+    return pbx_summary_df
+
+def calculate_bitrix_stats(bitrix_df, pbx_summary_df):
+    """
+    Считает:
+    - Общее количество строк в bitrix_df
+    - Количество строк, где SOURCE_ID содержит "8", "11" или "STORE"
+    - Добавляет данные в итоговую таблицу pbx_summary_df
+    """
+    # Подсчитываем общее количество строк
+    total_rows = len(bitrix_df)
+
+    # Подсчитываем строки с нужными значениями в SOURCE_ID
+    filtered_rows = bitrix_df["SOURCE_ID"].astype(str).isin(["8", "11", "STORE"]).sum()
+
+    # Создаем DataFrame с результатами
+    stats_df = pd.DataFrame({
+        "Метрика": ["Всего лидов (Bitrix)", "Ліди Бізнес з інтернета"],
+        "Значение": [total_rows, filtered_rows]
+    })
+
+    # Добавляем результаты в итоговую таблицу
+    pbx_summary_df = pd.concat([pbx_summary_df, stats_df], ignore_index=True)
+
+    return pbx_summary_df
