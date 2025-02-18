@@ -11,8 +11,10 @@ beartype==0.19.0
 bitrix24-rest==2.0.3
 certifi==2024.12.14
 charset-normalizer==3.4.0
+click==8.1.8
 fastapi==0.115.8
 frozenlist==1.5.0
+h11==0.14.0
 icontract==2.7.1
 idna==3.10
 magic-filter==1.0.12
@@ -38,4 +40,5 @@ tqdm==4.67.1
 typing_extensions==4.12.2
 tzdata==2024.2
 urllib3==2.2.3
+uvicorn==0.34.0
 yarl==1.18.3
