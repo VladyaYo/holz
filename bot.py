@@ -7,7 +7,7 @@ from aiogram.filters import Command
 from dotenv import load_dotenv
 import os
 from fastapi import FastAPI
-from main import main  # Импортируем функцию main из main.py
+from main import main
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")

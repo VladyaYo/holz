@@ -1,7 +1,6 @@
 import pandas as pd
 import os
 
-
 def save_to_csv(df: pd.DataFrame, start_time, stop_time, file_prefix: str) -> str | None:
     """
     Сохраняет итоговую таблицу в файл CSV и возвращает путь к файлу.
@@ -122,17 +121,15 @@ def process_and_count_rows(merged_df):
 
     # Добавляем строки с дополнительными расчетами
     summary_rows = [
-        {'PBXNumberName': 'Всего строк (с PBXNumberNumber и Match number)', 'Count': total_valid_rows},
-        {'PBXNumberName': 'Строки с PBXNumberNumber, но без PBXNumberName', 'Count': pbx_number_without_name},
+        {'PBXNumberName': 'Ліди зі всіх дзвінків', 'Count': total_valid_rows},
+        {'PBXNumberName': 'Ліди з інших номерів', 'Count': pbx_number_without_name},
         {'PBXNumberName': 'Строки с Match number и GeneralCallID_GetCalls', 'Count': match_and_general_call_id},
-        {'PBXNumberName': 'Строки с Match number и GeneralCallID_GetCalls, но без PBXNumberNumber', 'Count': match_and_general_call_id_without_pbx}
+        {'PBXNumberName': 'Ліди з GetCall', 'Count': match_and_general_call_id_without_pbx}
     ]
 
     # Добавляем дополнительные строки в итоговую таблицу
     pbx_name_counts = pd.concat([pd.DataFrame(summary_rows), pbx_name_counts], ignore_index=True)
     return pbx_name_counts
-
-import pandas as pd
 
 def calculate_incoming_calls_stats(incoming_calls_df, pbx_summary_df):
     """

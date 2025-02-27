@@ -109,4 +109,4 @@ async def main(start_date_str: str, end_date_str: str):
     return final_file_path
 
 if __name__ == "__main__":
-    asyncio.run(main("2025-02-08", "2025-02-14"))
+    asyncio.run(main("2025-02-15", "2025-02-21"))
