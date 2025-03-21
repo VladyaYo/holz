@@ -120,6 +120,7 @@ def process_bitrix_data(bitrix_leads, start_time, stop_time):
         print("Нет данных для лидов из Bitrix за указанный период.")
         return
 
+    print("Пример данных перед обработкой:", bitrix_leads[:2])
     rows = []
     for lead in bitrix_leads:
         phones = lead.get('PHONE', [])

@@ -1,16 +1,11 @@
 import asyncio
 from datetime import datetime
-from sqlalchemy import create_engine
 import pandas as pd
 import os
 
 from api_requests import fetch_incoming_calls, fetch_getcalls_for_period, fetch_bitrix_leads
 from process import process_call_data, process_getcalls_data, process_bitrix_data
 from table_processing import  save_to_csv, format_all_phone_numbers, merge_tables, process_and_count_rows, calculate_incoming_calls_stats, calculate_getcalls_stats, calculate_bitrix_stats
-
-db_url = "postgresql://postgres:sugG7LCG@localhost:5432/holzbd"
-engine = create_engine(db_url)
-
 
 async def fetch_data(start_time, stop_time, start_date_str, end_date_str):
     """Асинхронный запуск запросов"""
@@ -24,8 +19,6 @@ async def fetch_data(start_time, stop_time, start_date_str, end_date_str):
 
 
 async def main(start_date_str: str, end_date_str: str):
-    # start_date_str = "2025-02-01"
-    # end_date_str = "2025-02-07"
 
     start_time = datetime.strptime(start_date_str, "%Y-%m-%d")
     stop_time = datetime.strptime(end_date_str, "%Y-%m-%d")
@@ -67,10 +60,6 @@ async def main(start_date_str: str, end_date_str: str):
 
     incoming_calls_df, getcalls_df, bitrix_df = format_all_phone_numbers(incoming_calls_df, getcalls_df, bitrix_df)
 
-    # incoming_calls_df.to_sql("incoming_calls", engine, if_exists="replace", index=False)
-    # getcalls_df.to_sql("getcalls", engine, if_exists="replace", index=False)
-    # bitrix_df.to_sql("bitrix", engine, if_exists="replace", index=False)
-
     save_to_csv(incoming_calls_df, start_time, stop_time, "incoming_calls_ph_formatting")
     save_to_csv(getcalls_df, start_time, stop_time, "getcalls_ph_formatting")
     save_to_csv(bitrix_df, start_time, stop_time, "bitrix_ph_formatting")
@@ -92,21 +81,9 @@ async def main(start_date_str: str, end_date_str: str):
     # Сохраняем итоговую таблицу
     final_file_path = save_to_csv(pbx_summary_df, start_time, stop_time, "pbx_summary")
 
-    # Сохраняем итоговую таблицу
-    # save_to_csv(pbx_summary_df, start_time, stop_time, "pbx_summary")
-
-    # # Объединяем данные по номеру телефона
-    # merged_df = combine_tables_with_phone_formatting(incoming_calls_df, getcalls_df, bitrix_df)
-    #
-    # # Сохраняем итоговую таблицу
-    # save_to_csv(merged_df, start_time, stop_time, "merged_data")
-    #
-    # merge_on_numbers = merge_and_filter_columns(merged_df)
-    #
-    # save_to_csv(merge_on_numbers, start_time, stop_time, "merged_on_numbers")
 
     print("Обработка завершена.")
     return final_file_path
 
 if __name__ == "__main__":
-    asyncio.run(main("2025-02-15", "2025-02-21"))
+    asyncio.run(main("2025-03-08", "2025-03-14"))

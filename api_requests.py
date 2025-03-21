@@ -14,7 +14,6 @@ BINOTEL_API_KEY = os.getenv("BINOTEL_API_KEY")
 BINOTEL_API_SECRET = os.getenv("BINOTEL_API_SECRET")
 
 api = BinotelApi(BINOTEL_API_KEY, BINOTEL_API_SECRET)
-api.debug = True  # Включить отладку
 
 def fetch_incoming_calls(start_time: datetime, stop_time: datetime):
     """Запрос статистики входящих звонков за указанный период."""
@@ -65,7 +64,7 @@ def fetch_bitrix_leads(start_date_str, end_date_str):
             ">=DATE_CREATE": start_date,
             "<=DATE_CREATE": end_date,
         },
-        "select": ["ID", "TITLE", "DATE_CREATE", "STATUS_ID", "SOURCE_ID", "SOURCE_DESCRIPTION", "PHONE"],
+        "select": ["ID", "TITLE", "DATE_CREATE", "STATUS_ID", "SOURCE_ID", "SOURCE_DESCRIPTION", "PHONE", "UF_CRM_1459948608"],
     }
 
     all_leads = []
@@ -87,3 +86,23 @@ def fetch_bitrix_leads(start_date_str, end_date_str):
             raise Exception(f"Ошибка {response.status_code}: {response.text}")
 
     return all_leads
+
+
+def fetch_bitrix_lead_fields():
+    method = "crm.lead.fields"
+    BITRIX_WEBHOOK_URL = f"https://{BITRIX_DOMAIN}.{BITRIX_REGION}/rest/28/{BITRIX_AUTH_KEY}/"
+
+    response = requests.post(f"{BITRIX_WEBHOOK_URL}{method}")
+
+    if response.ok:
+        fields = response.json().get("result", {})
+        return fields
+    else:
+        raise Exception(f"Ошибка {response.status_code}: {response.text}")
+
+# Пример использования
+try:
+    lead_fields = fetch_bitrix_lead_fields()
+    print(lead_fields)
+except Exception as e:
+    print(e)
