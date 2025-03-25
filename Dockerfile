@@ -1,17 +1,15 @@
-# Используем официальный образ Python
 FROM python:3.12-slim
 
-# Устанавливаем рабочую директорию
+# Устанавливаем зависимости для PostgreSQL
+RUN apt-get update && apt-get install -y libpq-dev
+
+# Создаем рабочую директорию
 WORKDIR /app
 
-# Копируем файл с зависимостями
-COPY requirements.txt .
+# Копируем файлы проекта
+COPY . .
 
 # Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем остальные файлы проекта
-COPY . .
-
-# Команда для запуска бота
-CMD ["python3", "bot.py"]
+CMD ["python", "bot.py"]
