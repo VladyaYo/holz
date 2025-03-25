@@ -24,7 +24,6 @@ numpy==2.2.0
 pandas==2.2.3
 phonenumbers==8.13.52
 propcache==0.2.1
-psycopg2==2.9.10
 pydantic==2.10.6
 pydantic_core==2.27.2
 python-dateutil==2.9.0.post0
