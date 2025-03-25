@@ -10,9 +10,6 @@ COPY requirements.txt .
 # Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Устанавливаем переменные окружения из .env файла
-ENV $(cat .env | xargs)
-
 # Копируем остальные файлы проекта
 COPY . .
 
