@@ -52,6 +52,24 @@ def fetch_getcalls_for_period(start_time: datetime, stop_time: datetime):
     else:
         raise Exception(f"REST API ошибка {result.get('code', 'unknown')}: {result.get('message')}")
 
+def fetch_calltracking_calls(start_time: datetime, stop_time: datetime):
+    """Запрос статистики входящих звонков за указанный период."""
+    start_time = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
+    stop_time = stop_time.replace(hour=23, minute=59, second=59, microsecond=0)
+
+    start_timestamp = int(start_time.timestamp())
+    stop_timestamp = int(stop_time.timestamp())
+
+    result = api.send_request('stats/calltracking-calls-for-period', {
+        'startTime': start_timestamp,
+        'stopTime': stop_timestamp,
+    })
+    if result.get('status') == 'success':
+        return result.get("callDetails", {})
+    else:
+        raise Exception(f"REST API ошибка {result.get('code', 'unknown')}: {result.get('message')}")
+
+
 def fetch_bitrix_leads(start_date_str, end_date_str):
     method = "crm.lead.list"
     BITRIX_WEBHOOK_URL = f"https://{BITRIX_DOMAIN}.{BITRIX_REGION}/rest/28/{BITRIX_AUTH_KEY}/"

@@ -153,4 +153,100 @@ def process_bitrix_data(bitrix_leads, start_time, stop_time):
     df.to_csv(f"received_data/{file_name}", index=False, encoding="utf-8-sig")
     print(f"Данные из Bitrix сохранены в файл {file_name}")
 
+def process_calltracking_data(call_details, start_time, stop_time):
+    if not call_details:
+        print("Нет данных для входящих звонков за указанный период.")
+        return
+
+    # first_call_id, first_details = next(iter(call_details.items()))
+    # print("Данные до изменения:")
+    # print(f"Call ID: {first_call_id}")
+    # print(f"Details: {first_details}")
+    # print("----------------------")
+
+    rows = []
+
+    for call_id, details in call_details.items():
+
+        row = {
+            "CallId": f"ct-{details.get('generalCallID')}",
+            # "CompanyID": details.get("companyID"),
+            # "GeneralCallID": details.get("generalCallID"),
+            "ExternalNumber": details.get("externalNumber"),
+            "CreatedAt": datetime.fromtimestamp(
+                int(details.get("startTime", 0))
+            ).strftime("%Y-%m-%d %H:%M:%S")
+            if details.get("startTime")
+            else None,
+            "GAClientID": details.get("callTrackingData").get("gaClientId")
+            if isinstance(details.get("callTrackingData"), dict)
+            else None,
+            "FullUrl": details.get("callTrackingData").get("fullUrl")
+            if isinstance(details.get("callTrackingData"), dict)
+            else None,
+            "IPAddress": details.get("callTrackingData").get("ipAddress")
+            if isinstance(details.get("callTrackingData"), dict)
+            else None,
+            "GATrackingID": details.get("gaTrackingId"),
+            "UTMSource": details.get("callTrackingData").get("utm_source")
+            if isinstance(details.get("callTrackingData"), dict)
+            else None,
+            "UTMMedium": details.get("callTrackingData").get("utm_medium")
+            if isinstance(details.get("callTrackingData"), dict)
+            else None,
+            # "UTMSource": details.get("utm_source"),
+            # "UTMMedium": details.get("utm_medium"),
+            "UTMCampaign": details.get("utm_campaign"),
+            "UTMContent": details.get("utm_content"),
+            "UTMTerm": details.get("utm_term"),
+            "GeoIPCountry": details.get("geoipCountry"),
+            "GeoIPRegion": details.get("geoipRegion"),
+            "GeoIPCity": details.get("geoipCity"),
+            "GeoIPOrg": details.get("geoipOrg"),
+            # "CallType": details.get("callType"),
+            # "InternalNumber": details.get("internalNumber"),
+            # "InternalAdditionalData": details.get("internalAdditionalData"),
+            # "WaitSec": details.get("waitsec"),
+            # "BillSec": details.get("billsec"),
+            # "Disposition": details.get("disposition"),
+            # "IsNewCall": details.get("isNewCall"),
+            # "CustomerName": details.get("customerData").get("name")
+            # if isinstance(details.get("customerData"), dict)
+            # else None,
+            # "CustomerEmail": details.get("customerData").get("email")
+            # if isinstance(details.get("customerData"), dict)
+            # else None,
+            # "EmployeeName": details.get("employeeData").get("name")
+            # if isinstance(details.get("employeeData"), dict)
+            # else None,
+            # "EmployeeEmail": details.get("employeeData").get("email")
+            # if isinstance(details.get("employeeData"), dict)
+            # else None,
+            # "PBXNumberNumber": details.get("pbxNumberData").get("number")
+            # if isinstance(details.get("pbxNumberData"), dict)
+            # else None,
+            # "PBXNumberName": details.get("pbxNumberData").get("name")
+            # if isinstance(details.get("pbxNumberData"), dict)
+            # else None,
+            # "IPAddress": details.get("ipAddress"),
+            # "HistoryData": details.get("historyData", []),
+            # "CallTrackingData": details.get("callTrackingData", []),
+            # "GetCallData": details.get("getCallData", []),
+            # "SMSContent": details.get("smsContent"),
+            # "LinkToCrmUrl": details.get("customerDataFromOutside").get("linkToCrmUrl")
+            # if isinstance(details.get("customerDataFromOutside"), dict)
+            # else None,
+        }
+        rows.append(row)
+
+    # Создаем DataFrame
+    df = pd.DataFrame(rows)
+
+    # Убедимся, что папка для сохранения данных существует
+    os.makedirs("received_data", exist_ok=True)
+
+    # Сохраняем данные в файл CSV
+    file_name = f"Calltracking_calls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv"
+    df.to_csv(f"received_data/{file_name}", index=False, encoding="utf-8-sig")
+    print(f"Данные списка звонков сохранены в файл {file_name}")
 
