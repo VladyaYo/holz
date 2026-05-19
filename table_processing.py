@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-def save_to_csv(df: pd.DataFrame, start_time, stop_time, file_prefix: str) -> str | None:
+def save_to_csv(df: pd.DataFrame, start_time, stop_time, file_prefix: str, output_dir: str = "processed_data") -> str | None:
     """
     Сохраняет итоговую таблицу в файл CSV и возвращает путь к файлу.
 
@@ -9,11 +9,12 @@ def save_to_csv(df: pd.DataFrame, start_time, stop_time, file_prefix: str) -> st
     :param start_time: Начальное время (объект datetime или строка).
     :param stop_time: Конечное время (объект datetime или строка).
     :param file_prefix: Префикс для имени файла.
+    :param output_dir: Директория для сохранения файла. По умолчанию "processed_data".
     :return: Путь к сохраненному файлу.
     """
     try:
         # Создаем папку, если она не существует
-        os.makedirs("processed_data", exist_ok=True)
+        os.makedirs(output_dir, exist_ok=True)
 
         # Формируем имя файла
         if hasattr(start_time, 'strftime') and hasattr(stop_time, 'strftime'):
@@ -24,7 +25,7 @@ def save_to_csv(df: pd.DataFrame, start_time, stop_time, file_prefix: str) -> st
             file_name = f"processed_{file_prefix}_{start_time}-{stop_time}.csv"
 
         # Полный путь к файлу
-        file_path = os.path.join("processed_data", file_name)
+        file_path = os.path.join(output_dir, file_name)
 
         # Сохраняем DataFrame в CSV
         df.to_csv(file_path, index=False, encoding="utf-8-sig")
@@ -91,46 +92,6 @@ def merge_tables(bitrix_df, incoming_calls_df, getcalls_df):
     )
 
     return merged_df
-
-# def process_and_count_rows(merged_df):
-#     """Обрабатывает таблицу: удаляет пустые и дубли, считает нужные строки и сохраняет результат."""
-#
-#     # Удаляем строки, где 'Match number' пустой
-#     filtered_df = merged_df.dropna(subset=['Match number']).copy()
-#
-#     # Удаляем дубли по 'Match number', оставляя строки с большим числом ненулевых значений
-#     filtered_df['non_null_count'] = filtered_df.notna().sum(axis=1)
-#     filtered_df = filtered_df.sort_values(by=['Match number', 'non_null_count'], ascending=[True, False])
-#     filtered_df = filtered_df.drop_duplicates(subset=['Match number'], keep='first')
-#     filtered_df = filtered_df.drop(columns=['non_null_count'])
-#
-#     # Считаем количество строк, содержащих PBXNumberNumber и 'Match number'
-#     total_valid_rows = filtered_df.dropna(subset=['PBXNumberNumber', 'Match number']).shape[0]
-#
-#     # Считаем количество строк с PBXNumberNumber, но без PBXNumberName
-#     pbx_number_without_name = filtered_df.dropna(subset=['PBXNumberNumber']).loc[filtered_df['PBXNumberName'].isna()].shape[0]
-#
-#     # Считаем количество строк, где есть значение в колонках 'Match number' и 'GeneralCallID_GetCalls'
-#     match_and_general_call_id = filtered_df.dropna(subset=['Match number', 'GeneralCallID_GetCalls']).shape[0]
-#
-#     # Считаем количество строк, где есть значение в колонках 'Match number' и 'GeneralCallID_GetCalls', но нет значения в 'PBXNumberNumber'
-#     match_and_general_call_id_without_pbx = filtered_df.dropna(subset=['Match number', 'GeneralCallID_GetCalls']).loc[filtered_df['PBXNumberNumber'].isna()].shape[0]
-#
-#     # Группируем по 'PBXNumberName' и считаем количество строк
-#     pbx_name_counts = filtered_df['PBXNumberName'].fillna('Пусто').value_counts().reset_index()
-#     pbx_name_counts.columns = ['PBXNumberName', 'Count']
-#
-#     # Добавляем строки с дополнительными расчетами
-#     summary_rows = [
-#         {'PBXNumberName': 'Ліди зі всіх дзвінків', 'Count': total_valid_rows},
-#         {'PBXNumberName': 'Ліди з інших номерів', 'Count': pbx_number_without_name},
-#         {'PBXNumberName': 'Строки с Match number и GeneralCallID_GetCalls', 'Count': match_and_general_call_id},
-#         {'PBXNumberName': 'Ліди з GetCall', 'Count': match_and_general_call_id_without_pbx}
-#     ]
-#
-#     # Добавляем дополнительные строки в итоговую таблицу
-#     pbx_name_counts = pd.concat([pd.DataFrame(summary_rows), pbx_name_counts], ignore_index=True)
-#     return pbx_name_counts
 
 def process_and_count_rows(merged_df):
     """Обрабатывает таблицу: удаляет пустые и дубли, считает нужные строки и сохраняет результат."""
@@ -282,10 +243,8 @@ def calculate_bitrix_stats(bitrix_df, pbx_summary_df):
 
     return pbx_summary_df
 
-# filter_facebook_calls.py
 
-
-def filter_facebook_calls(dfs_with_names: list, start_time: str, stop_time: str, filename_prefix: str = "facebook_combined_calls"):
+def filter_facebook_calls(dfs_with_names: list, start_time: str, stop_time: str, filename_prefix: str = "facebook_combined_calls", output_dir: str = "processed_data"):
     """
     Фильтрует звонки из нескольких таблиц по источникам 'facebook_ads', 'fb_catalog', 'fb' и добавляет пометку источника.
 
@@ -293,6 +252,7 @@ def filter_facebook_calls(dfs_with_names: list, start_time: str, stop_time: str,
     :param start_time: дата начала (для имени файла)
     :param stop_time: дата конца (для имени файла)
     :param filename_prefix: префикс для имени файла
+    :param output_dir: Директория для сохранения файла. По умолчанию "processed_data".
     :return: объединённый датафрейм с фильтрованными строками
     """
     facebook_sources = ["facebook_ads", "fb_catalog", "fb"]
@@ -312,7 +272,7 @@ def filter_facebook_calls(dfs_with_names: list, start_time: str, stop_time: str,
 
     if facebook_rows:
         combined_df = pd.concat(facebook_rows, ignore_index=True)
-        save_to_csv(combined_df, start_time, stop_time, filename_prefix)
+        save_to_csv(combined_df, start_time, stop_time, filename_prefix, output_dir=output_dir)
         return combined_df
     else:
         print("❌ Не найдено строк с источником 'facebook_ads', 'fb_catalog' или 'fb'")

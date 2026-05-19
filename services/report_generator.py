@@ -3,13 +3,16 @@ from datetime import datetime
 import pandas as pd
 import os
 
-from api_requests import fetch_calltracking_calls, fetch_incoming_calls, fetch_getcalls_for_period, fetch_bitrix_leads
-from process import process_calltracking_data, process_call_data, process_getcalls_data, process_bitrix_data
-from table_processing import save_to_csv, format_all_phone_numbers, merge_tables, process_and_count_rows, \
+# Измененные импорты
+from ..api_requests import fetch_calltracking_calls, fetch_incoming_calls, fetch_getcalls_for_period, fetch_bitrix_leads
+from ..process import process_calltracking_data, process_call_data, process_getcalls_data, process_bitrix_data
+from ..table_processing import save_to_csv, format_all_phone_numbers, merge_tables, process_and_count_rows, \
     calculate_incoming_calls_stats, calculate_getcalls_stats, calculate_bitrix_stats, filter_facebook_calls
 
+# Define the directory for generated reports
+GENERATED_REPORTS_DIR = "generated_reports"
 
-async def fetch_data(start_time, stop_time, start_date_str, end_date_str):
+async def fetch_all_data(start_time, stop_time, start_date_str, end_date_str):
     """Асинхронный запуск запросов"""
     calltracking_calls_task = asyncio.to_thread(fetch_calltracking_calls, start_time, stop_time)
     incoming_calls_task = asyncio.to_thread(fetch_incoming_calls, start_time, stop_time)
@@ -21,29 +24,42 @@ async def fetch_data(start_time, stop_time, start_date_str, end_date_str):
     return calltracking_calls, incoming_calls, getcalls, bitrix_leads
 
 
-async def main(start_date_str: str, end_date_str: str):
-
+async def generate_report(start_date_str: str, end_date_str: str) -> str:
+    """
+    Генерирует отчет на основе данных из различных источников.
+    Возвращает путь к сгенерированному файлу отчета.
+    """
     start_time = datetime.strptime(start_date_str, "%Y-%m-%d")
     stop_time = datetime.strptime(end_date_str, "%Y-%m-%d")
 
     # Генерация имен файлов
-    calltracking_calls_file = f"received_data/calltracking_calls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv"
-    incoming_calls_file = f"received_data/Incoming_calls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv"
-    getcalls_file = f"received_data/Getcalls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv"
-    bitrix_file = f"received_data/bitrix_leads_data_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv"
-    merged_file = f"received_data/merged_data_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv"
+    received_data_dir = "received_data"
+    if not os.path.exists(received_data_dir):
+        os.makedirs(received_data_dir)
+    if not os.path.exists(GENERATED_REPORTS_DIR):
+        os.makedirs(GENERATED_REPORTS_DIR)
+
+    calltracking_calls_file = os.path.join(received_data_dir, f"calltracking_calls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
+    incoming_calls_file = os.path.join(received_data_dir, f"Incoming_calls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
+    getcalls_file = os.path.join(received_data_dir, f"Getcalls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
+    bitrix_file = os.path.join(received_data_dir, f"bitrix_leads_data_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
+    merged_file = os.path.join(received_data_dir, f"merged_data_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
+
+    # Define the final report file path early
+    final_report_name = f"processed_pbx_summary_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv"
+    final_file_path = os.path.join(GENERATED_REPORTS_DIR, final_report_name)
 
     # Проверка на существование итогового файла
-    if os.path.exists(merged_file):
-        print(f"Итоговый файл уже существует: {merged_file}")
-        return
+    if os.path.exists(final_file_path): # Check for the final report file
+        print(f"Итоговый файл уже существует: {final_file_path}")
+        return final_file_path
 
     # Проверка на существование промежуточных файлов
     files_exist = all(os.path.exists(f) for f in [calltracking_calls_file, incoming_calls_file, getcalls_file, bitrix_file])
 
     if not files_exist:
         # Получаем данные параллельно
-        calltracking_calls, incoming_calls, getcalls, bitrix_leads = await fetch_data(start_time, stop_time, start_date_str, end_date_str)
+        calltracking_calls, incoming_calls, getcalls, bitrix_leads = await fetch_all_data(start_time, stop_time, start_date_str, end_date_str)
 
         # Обрабатываем данные
         if calltracking_calls:
@@ -68,9 +84,10 @@ async def main(start_date_str: str, end_date_str: str):
 
     calltracking_calls_df, incoming_calls_df, getcalls_df, bitrix_df = format_all_phone_numbers(calltracking_calls_df, incoming_calls_df, getcalls_df, bitrix_df)
 
-    save_to_csv(incoming_calls_df, start_time, stop_time, "incoming_calls_ph_formatting")
-    save_to_csv(getcalls_df, start_time, stop_time, "getcalls_ph_formatting")
-    save_to_csv(bitrix_df, start_time, stop_time, "bitrix_ph_formatting")
+    # Update save_to_csv calls for intermediate files
+    save_to_csv(incoming_calls_df, start_time, stop_time, "incoming_calls_ph_formatting", output_dir=received_data_dir)
+    save_to_csv(getcalls_df, start_time, stop_time, "getcalls_ph_formatting", output_dir=received_data_dir)
+    save_to_csv(bitrix_df, start_time, stop_time, "bitrix_ph_formatting", output_dir=received_data_dir)
 
     facebook_combined_df = filter_facebook_calls(
         dfs_with_names=[
@@ -78,14 +95,15 @@ async def main(start_date_str: str, end_date_str: str):
             ("getcalls", getcalls_df),
         ],
         start_time=start_time.strftime('%Y.%m.%d'),
-        stop_time=stop_time.strftime('%Y.%m.%d')
+        stop_time=stop_time.strftime('%Y.%m.%d'),
+        output_dir=GENERATED_REPORTS_DIR # Pass output_dir to filter_facebook_calls
     )
 
     # Объединяем таблицы
     merged_df = merge_tables(bitrix_df, incoming_calls_df, getcalls_df)
 
     # Сохраняем финальный результат
-    save_to_csv(merged_df, start_time, stop_time, "final_merged")
+    save_to_csv(merged_df, start_time, stop_time, "final_merged", output_dir=received_data_dir)
 
     # Фильтруем строки, где UTMSource — facebook_ads или fb_catalog
     merged_df["UTMSource"] = merged_df["UTMSource"].str.strip().str.lower()
@@ -94,7 +112,7 @@ async def main(start_date_str: str, end_date_str: str):
     ]
 
     # Сохраняем отфильтрованные данные
-    save_to_csv(facebook_df, start_time, stop_time, "facebook_only")
+    save_to_csv(facebook_df, start_time, stop_time, "facebook_only", output_dir=GENERATED_REPORTS_DIR)
 
     pbx_summary_df = process_and_count_rows(merged_df)
 
@@ -130,8 +148,7 @@ async def main(start_date_str: str, end_date_str: str):
         print("Внимание: колонка 'TITLE' не найдена в bitrix_df — пропущен расчёт 'Замовлення на сайті'")
 
     # Сохраняем итоговую таблицу
-    final_file_path = save_to_csv(pbx_summary_df, start_time, stop_time, "pbx_summary")
-
+    final_file_path = save_to_csv(pbx_summary_df, start_time, stop_time, "pbx_summary", output_dir=GENERATED_REPORTS_DIR)
 
     print("Обработка завершена.")
     return final_file_path
