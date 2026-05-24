@@ -16,13 +16,13 @@ services:
       - .env
     restart: always
 
-  bot:
-    build:
-      context: .
-      dockerfile: Dockerfile.bot
-    container_name: holz_bot
-    env_file:
-      - .env
-    restart: always
+#  bot:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.bot
+#    container_name: holz_bot
+#    env_file:
+#      - .env
+#    restart: always
     # Бот будет перезапускаться при падении. Пока bot.py пуст, контейнер может завершать работу.
     # Если бот временно не нужен, эту секцию можно закомментировать.
