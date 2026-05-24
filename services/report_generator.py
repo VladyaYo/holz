@@ -39,9 +39,16 @@ async def generate_report(start_date_str: str, end_date_str: str) -> str:
     if not os.path.exists(GENERATED_REPORTS_DIR):
         os.makedirs(GENERATED_REPORTS_DIR)
 
-    calltracking_calls_file = os.path.join(received_data_dir, f"calltracking_calls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
-    incoming_calls_file = os.path.join(received_data_dir, f"Incoming_calls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
-    getcalls_file = os.path.join(received_data_dir, f"Getcalls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
+    calltracking_calls_file = os.path.join(received_data_dir,
+                                           f"Calltracking_calls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
+    incoming_calls_file = os.path.join(received_data_dir,
+                                       f"Incoming_calls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
+    getcalls_file = os.path.join(received_data_dir,
+                                 f"Getcalls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
+
+    # calltracking_calls_file = os.path.join(received_data_dir, f"calltracking_calls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
+    # incoming_calls_file = os.path.join(received_data_dir, f"Incoming_calls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
+    # getcalls_file = os.path.join(received_data_dir, f"Getcalls_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
     bitrix_file = os.path.join(received_data_dir, f"bitrix_leads_data_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
     merged_file = os.path.join(received_data_dir, f"merged_data_{start_time.strftime('%Y.%m.%d')}-{stop_time.strftime('%Y.%m.%d')}.csv")
 
