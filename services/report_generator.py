@@ -3,10 +3,10 @@ from datetime import datetime
 import pandas as pd
 import os
 
-# Измененные импорты
-from ..api_requests import fetch_calltracking_calls, fetch_incoming_calls, fetch_getcalls_for_period, fetch_bitrix_leads
-from ..process import process_calltracking_data, process_call_data, process_getcalls_data, process_bitrix_data
-from ..table_processing import save_to_csv, format_all_phone_numbers, merge_tables, process_and_count_rows, \
+# Измененные импорты на абсолютные
+from api_requests import fetch_calltracking_calls, fetch_incoming_calls, fetch_getcalls_for_period, fetch_bitrix_leads
+from process import process_calltracking_data, process_call_data, process_getcalls_data, process_bitrix_data
+from table_processing import save_to_csv, format_all_phone_numbers, merge_tables, process_and_count_rows, \
     calculate_incoming_calls_stats, calculate_getcalls_stats, calculate_bitrix_stats, filter_facebook_calls
 
 # Define the directory for generated reports
@@ -62,17 +62,10 @@ async def generate_report(start_date_str: str, end_date_str: str) -> str:
         calltracking_calls, incoming_calls, getcalls, bitrix_leads = await fetch_all_data(start_time, stop_time, start_date_str, end_date_str)
 
         # Обрабатываем данные
-        if calltracking_calls:
-            process_calltracking_data(calltracking_calls, start_time, stop_time)
-
-        if incoming_calls:
-            process_call_data(incoming_calls, start_time, stop_time)
-
-        if getcalls:
-            process_getcalls_data(getcalls, start_time, stop_time)
-
-        if bitrix_leads:
-            process_bitrix_data(bitrix_leads, start_time, stop_time)
+        process_calltracking_data(calltracking_calls, start_time, stop_time)
+        process_call_data(incoming_calls, start_time, stop_time)
+        process_getcalls_data(getcalls, start_time, stop_time)
+        process_bitrix_data(bitrix_leads, start_time, stop_time)
     else:
         print("Все файлы уже существуют. Пропускаем запросы.")
 

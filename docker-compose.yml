@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: holz_web
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./generated_reports:/app/generated_reports
+      - ./received_data:/app/received_data
+      - ./processed_data:/app/processed_data
+    env_file:
+      - .env
+    restart: always
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    container_name: holz_bot
+    env_file:
+      - .env
+    restart: always
+    # Бот будет перезапускаться при падении. Пока bot.py пуст, контейнер может завершать работу.
+    # Если бот временно не нужен, эту секцию можно закомментировать.

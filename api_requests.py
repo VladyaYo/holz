@@ -119,8 +119,10 @@ def fetch_bitrix_lead_fields():
         raise Exception(f"Ошибка {response.status_code}: {response.text}")
 
 # Пример использования
-try:
-    lead_fields = fetch_bitrix_lead_fields()
-    print(lead_fields)
-except Exception as e:
-    print(e)
+if __name__ == '__main__':
+    try:
+        lead_fields = fetch_bitrix_lead_fields()
+        print(lead_fields)
+    except Exception as e:
+        print(e)
+

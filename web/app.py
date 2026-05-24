@@ -14,7 +14,7 @@ if not os.path.exists(REPORT_DIR):
     os.makedirs(REPORT_DIR)
 
 @app.route('/', methods=['GET', 'POST'])
-async def index():
+def index():
     if request.method == 'POST':
         start_date_str = request.form.get('start_date')
         end_date_str = request.form.get('end_date')
@@ -30,7 +30,12 @@ async def index():
             return render_template('index.html', error="Неверный формат даты. Используйте YYYY-MM-DD.")
 
         # Запускаем генерацию отчета
-        report_file_path = await generate_report(start_date_str, end_date_str)
+        try:
+            report_file_path = asyncio.run(generate_report(start_date_str, end_date_str))
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return render_template('index.html', error=f"Ошибка при генерации отчета: {e}")
 
         if report_file_path:
             # Перенаправляем на страницу с отчетом или предлагаем скачать
@@ -44,7 +49,7 @@ async def index():
 
 @app.route('/download/<filename>')
 def download_report(filename):
-    file_path = os.path.join(REPORT_DIR, filename)
+    file_path = os.path.abspath(os.path.join(REPORT_DIR, filename))
     if os.path.exists(file_path):
         return send_file(file_path, as_attachment=True)
     else:

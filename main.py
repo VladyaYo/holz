@@ -46,17 +46,10 @@ async def main(start_date_str: str, end_date_str: str):
         calltracking_calls, incoming_calls, getcalls, bitrix_leads = await fetch_data(start_time, stop_time, start_date_str, end_date_str)
 
         # Обрабатываем данные
-        if calltracking_calls:
-            process_calltracking_data(calltracking_calls, start_time, stop_time)
-
-        if incoming_calls:
-            process_call_data(incoming_calls, start_time, stop_time)
-
-        if getcalls:
-            process_getcalls_data(getcalls, start_time, stop_time)
-
-        if bitrix_leads:
-            process_bitrix_data(bitrix_leads, start_time, stop_time)
+        process_calltracking_data(calltracking_calls, start_time, stop_time)
+        process_call_data(incoming_calls, start_time, stop_time)
+        process_getcalls_data(getcalls, start_time, stop_time)
+        process_bitrix_data(bitrix_leads, start_time, stop_time)
     else:
         print("Все файлы уже существуют. Пропускаем запросы.")
 
