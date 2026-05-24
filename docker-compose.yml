@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: holz_web
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000"
     volumes:
       - ./generated_reports:/app/generated_reports
       - ./received_data:/app/received_data
